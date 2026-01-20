@@ -1,0 +1,14 @@
+{
+  "name": "b2b-blockchain-backend",
+  "version": "1.0.0",
+  "description": "Backend for the B2B Blockchain project.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "mongoose": "^6.0.12"
+  }
+}

@@ -14,7 +14,7 @@ task("check-account", "Prints the account's address used for deployment", async 
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.9",
+  solidity: "0.8.20",
   networks: {
     sepolia: {
       url: process.env.SEPOLIA_RPC_URL || "",
