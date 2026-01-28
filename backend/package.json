@@ -1,14 +1,26 @@
 {
   "name": "b2b-blockchain-backend",
   "version": "1.0.0",
-  "description": "Backend for the B2B Blockchain project.",
+  "description": "Backend for the B2B Product Reservation System.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "db:migrate": "sequelize db:migrate",
+    "db:migrate:undo": "sequelize db:migrate:undo:all"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.17.1",
-    "mongoose": "^6.0.12"
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.1",
+    "express": "^4.19.2",
+    "mysql2": "^3.10.1",
+    "sequelize": "^6.37.3"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.2"
   }
 }

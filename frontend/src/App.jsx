@@ -1,38 +1,35 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/Login';
+import Marketplace from './pages/Marketplace';
 import SupplierDashboard from './pages/SupplierDashboard';
 import ResellerDashboard from './pages/ResellerDashboard';
-import CustomerStorefront from './pages/CustomerStorefront';
-import './App.css';
+import Navbar from './components/Navbar';
 
 function App() {
-    return (
-        <Router>
-            <div>
-                <nav>
-                    <ul>
-                        <li>
-                            <Link to="/supplier">Supplier Dashboard</Link>
-                        </li>
-                        <li>
-                            <Link to="/reseller">Reseller Dashboard</Link>
-                        </li>
-                        <li>
-                            <Link to="/customer">Customer Storefront</Link>
-                        </li>
-                    </ul>
-                </nav>
+  // Simple check for role (in real app, use Context/State)
+  const user = JSON.parse(localStorage.getItem('user'));
 
-                <hr />
-
-                <Routes>
-                    <Route path="/supplier" element={<SupplierDashboard />} />
-                    <Route path="/reseller" element={<ResellerDashboard />} />
-                    <Route path="/customer" element={<CustomerStorefront />} />
-                </Routes>
-            </div>
-        </Router>
-    );
+  return (
+    <Router>
+      <div className="min-h-screen bg-alibaba-gray font-sans">
+        <Navbar user={user} />
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          
+          {/* Marketplace is public/reseller view */}
+          <Route path="/" element={<Marketplace />} />
+          
+          <Route path="/supplier" element={
+            user && user.role === 'supplier' ? <SupplierDashboard /> : <Navigate to="/login" />
+          } />
+          
+          <Route path="/reseller" element={
+            user && user.role === 'reseller' ? <ResellerDashboard /> : <Navigate to="/login" />
+          } />
+        </Routes>
+      </div>
+    </Router>
+  );
 }
 
 export default App;

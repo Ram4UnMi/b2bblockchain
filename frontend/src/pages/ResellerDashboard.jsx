@@ -1,106 +1,68 @@
-// This component is for the Reseller.
-// It has two main sections:
-// 1. ON-CHAIN: Viewing and ordering products from the supplier's smart contract.
-// 2. OFF-CHAIN: Managing the reseller's own product catalog via a backend API.
-import React, { useState, useEffect } from 'react';
-import { ethers } from 'ethers';
-import ProductReservation from '../abi/ProductReservation.json';
+import { useState, useEffect } from 'react';
 
-// Replace with your contract address
-const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+const ResellerDashboard = () => {
+  const [orders, setOrders] = useState([]);
+  const user = JSON.parse(localStorage.getItem('user'));
 
-function ResellerDashboard() {
-    const [supplierProducts, setSupplierProducts] = useState([]);
-    const [resellerProducts, setResellerProducts] = useState([]);
-
-    useEffect(() => {
-        fetchSupplierProducts();
-        fetchResellerProducts();
-    }, []);
-
-    // ON-CHAIN: Fetch products from the smart contract
-    async function fetchSupplierProducts() {
-        if (typeof window.ethereum !== 'undefined') {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const contract = new ethers.Contract(contractAddress, ProductReservation.abi, provider);
-
-            try {
-                const productCount = await contract.productCount();
-                const products = [];
-                for (let i = 1; i <= productCount; i++) {
-                    const product = await contract.products(i);
-                    products.push(product);
-                }
-                setSupplierProducts(products);
-            } catch (error) {
-                console.error('Error fetching supplier products:', error);
-            }
-        }
+  useEffect(() => {
+    if (user?.id) {
+      fetchOrders();
     }
+  }, []);
 
-    // OFF-CHAIN: Fetch reseller's own products from the backend API
-    async function fetchResellerProducts() {
-        try {
-            const response = await fetch('http://localhost:5000/api/reseller/products');
-            const data = await response.json();
-            setResellerProducts(data);
-        } catch (error) {
-            console.error('Error fetching reseller products:', error);
-        }
-    }
+  const fetchOrders = async () => {
+    const res = await fetch(`http://localhost:3001/api/resellers/${user.id}/orders`);
+    const data = await res.json();
+    setOrders(data);
+  };
 
-    // ON-CHAIN: Order a product from the supplier
-    async function orderProduct(productId, quantity, price) {
-        if (typeof window.ethereum !== 'undefined') {
-            await window.ethereum.request({ method: 'eth_requestAccounts' });
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const signer = provider.getSigner();
-            const contract = new ethers.Contract(contractAddress, ProductReservation.abi, signer);
-
-            try {
-                const totalPrice = ethers.BigNumber.from(price).mul(quantity);
-                const transaction = await contract.orderProduct(productId, quantity, { value: totalPrice });
-                await transaction.wait();
-                alert('Product ordered successfully!');
-                fetchSupplierProducts(); // Refresh supplier products
-            } catch (error) {
-                console.error('Error ordering product:', error);
-                alert('Error ordering product.');
-            }
-        } else {
-            alert('MetaMask is not installed.');
-        }
-    }
-
-    return (
-        <div>
-            <h2>Reseller Dashboard</h2>
-
-            <h3>Supplier Products (On-Chain)</h3>
-            <p>Products available from the supplier on the blockchain.</p>
-            <div>
-                {supplierProducts.map((product) => (
-                    <div key={product.id.toString()}>
-                        <p>{product.name} - Price: {ethers.utils.formatEther(product.price)} ETH - Stock: {product.stock.toString()}</p>
-                        <button onClick={() => orderProduct(product.id, 1, product.price)}>Order 1 (On-Chain)</button>
-                    </div>
-                ))}
-            </div>
-
-            <hr />
-
-            <h3>My Catalog (Off-Chain)</h3>
-            <p>Manage your own products for sale to customers (no blockchain interaction).</p>
-            {/* Add CRUD UI for reseller's own products here */}
-            <div>
-                {resellerProducts.map((product) => (
-                    <div key={product.id}>
-                        <p>{product.name} - Price: ${product.price} - Quantity: {product.quantity}</p>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">My Orders</h1>
+      
+      <div className="bg-white rounded shadow overflow-hidden">
+        <table className="w-full text-left">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="p-4 border-b">Product</th>
+              <th className="p-4 border-b">Supplier</th>
+              <th className="p-4 border-b">Quantity</th>
+              <th className="p-4 border-b">Total Price</th>
+              <th className="p-4 border-b">Status</th>
+              <th className="p-4 border-b">Transaction</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map(order => (
+              <tr key={order.id} className="border-b hover:bg-gray-50">
+                <td className="p-4">
+                  <div className="font-bold">{order.Product?.name}</div>
+                </td>
+                <td className="p-4">{order.Supplier?.name}</td>
+                <td className="p-4">{order.quantity}</td>
+                <td className="p-4 text-alibaba-orange font-bold">{order.totalPrice} ETH</td>
+                <td className="p-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold
+                    ${order.status === 'paid' ? 'bg-green-100 text-green-800' : 
+                      order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100'}`}>
+                    {order.status.toUpperCase()}
+                  </span>
+                </td>
+                <td className="p-4 text-sm font-mono text-gray-500">
+                  {order.txHash ? order.txHash.substring(0, 16) + '...' : 'Pending'}
+                </td>
+              </tr>
+            ))}
+            {orders.length === 0 && (
+              <tr>
+                <td colSpan="6" className="p-8 text-center text-gray-500">No orders found. Go to Marketplace to buy something!</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
 
 export default ResellerDashboard;

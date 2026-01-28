@@ -1,15 +1,11 @@
-const { ethers } = require("hardhat");
+import { ethers } from "hardhat";
 
 async function main() {
-  const ProductReservation = await ethers.getContractFactory(
-    "ProductReservation"
-  );
+  const supplyChain = await ethers.deployContract("SupplyChainB2B");
 
-  const productReservation = await ProductReservation.deploy();
+  await supplyChain.waitForDeployment();
 
-  await productReservation.deployed();
-
-  console.log("ProductReservation deployed to:", productReservation.address);
+  console.log("SupplyChainB2B deployed to:", supplyChain.target);
 }
 
 main().catch((error) => {
