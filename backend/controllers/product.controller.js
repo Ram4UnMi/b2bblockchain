@@ -1,4 +1,5 @@
-const { Product, Supplier } = require('../models');
+const { Product, Supplier, Rating, Reseller } = require('../models');
+const { Op } = require('sequelize');
 
 // Get all products (Marketplace view)
 const getAllProducts = async (req, res) => {
@@ -15,15 +16,21 @@ const getAllProducts = async (req, res) => {
     }
 };
 
-// Get single product details
+// Get single product details with Ratings
 const getProductById = async (req, res) => {
     try {
         const { id } = req.params;
         const product = await Product.findByPk(id, {
-            include: [{
-                model: Supplier,
-                attributes: ['name', 'companyName', 'walletAddress']
-            }]
+            include: [
+                {
+                    model: Supplier,
+                    attributes: ['name', 'companyName', 'walletAddress']
+                },
+                {
+                    model: Rating,
+                    include: [{ model: Reseller, attributes: ['name', 'storeName'] }]
+                }
+            ]
         });
         if (!product) return res.status(404).json({ message: 'Product not found' });
         res.status(200).json(product);
@@ -32,7 +39,69 @@ const getProductById = async (req, res) => {
     }
 };
 
+// Add Rating
+const addRating = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { resellerId, rating, comment } = req.body;
+        
+        const newRating = await Rating.create({
+            productId: id,
+            resellerId,
+            rating,
+            comment
+        });
+        
+        res.status(201).json(newRating);
+    } catch (error) {
+        res.status(500).json({ message: 'Error adding rating', error: error.message });
+    }
+};
+
+// Soft Delete Product
+const deleteProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Product.destroy({ where: { id } });
+        res.status(200).json({ message: 'Product moved to trash' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting product', error: error.message });
+    }
+};
+
+// Get Deleted Products (Trash) for a Supplier
+const getDeletedProducts = async (req, res) => {
+    try {
+        const { supplierId } = req.query;
+        const products = await Product.findAll({
+            where: { 
+                supplierId,
+                deletedAt: { [Op.ne]: null }
+            },
+            paranoid: false // Include soft-deleted records
+        });
+        res.status(200).json(products);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching trash', error: error.message });
+    }
+};
+
+// Restore Product
+const restoreProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Product.restore({ where: { id } });
+        res.status(200).json({ message: 'Product restored' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error restoring product', error: error.message });
+    }
+};
+
 module.exports = {
     getAllProducts,
-    getProductById
+    getProductById,
+    addRating,
+    deleteProduct,
+    getDeletedProducts,
+    restoreProduct
 };
