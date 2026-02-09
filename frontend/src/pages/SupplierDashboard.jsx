@@ -182,6 +182,35 @@ const SupplierDashboard = () => {
     }
   };
 
+  const handleExportOrders = () => {
+    if (orders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+
+    const headers = ["Order ID", "Product Name", "Quantity", "Total Price (ETH)", "Status", "Transaction Hash"];
+    const csvData = orders.map(order => [
+      `"${order.id}"`,
+      `"${order.Product?.name || 'N/A'}"`,
+      `"${order.quantity}"`,
+      `"${order.totalPrice}"`,
+      `"${order.status}"`,
+      `"${order.txHash || 'N/A'}"`
+    ]);
+
+    const csvContent = [headers.join(","), ...csvData.map(e => e.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `supplier_orders_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Orders exported successfully!");
+  };
+
   // Calculate Stats
   const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.totalPrice || 0), 0);
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
@@ -366,8 +395,14 @@ const SupplierDashboard = () => {
 
           {activeTab === 'orders' && (
              <div className="bg-white dark:bg-[#1E1E1E] rounded-3xl shadow-xl shadow-gray-200/50 dark:shadow-none overflow-hidden border border-gray-100 dark:border-gray-800">
-                <div className="p-8 border-b border-gray-100 dark:border-gray-800">
+                <div className="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Order Management</h3>
+                   <button 
+                    onClick={handleExportOrders}
+                    className="px-4 py-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-xl text-sm font-bold hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-all active:scale-95"
+                   >
+                    Export Orders
+                   </button>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
@@ -396,7 +431,7 @@ const SupplierDashboard = () => {
                           </td>
                           <td className="p-6 text-xs">
                              {o.txHash ? (
-                               <a href={`https://etherscan.io/tx/${o.txHash}`} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center gap-1">
+                               <a href={`https://sepolia.etherscan.io/tx/${o.txHash}`} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center gap-1">
                                   View <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                                </a>
                              ) : '-'}

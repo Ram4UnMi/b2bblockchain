@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 const ResellerDashboard = () => {
   const [orders, setOrders] = useState([]);
@@ -16,11 +17,44 @@ const ResellerDashboard = () => {
     setOrders(data);
   };
 
+  const handleExportData = () => {
+    if (orders.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const headers = ["Order ID", "Product Name", "Supplier", "Quantity", "Total Price (ETH)", "Status", "Transaction Hash"];
+    const csvData = orders.map(order => [
+      `"${order.id}"`,
+      `"${order.Product?.name || 'N/A'}"`,
+      `"${order.Supplier?.name || 'N/A'}"`,
+      `"${order.quantity}"`,
+      `"${order.totalPrice}"`,
+      `"${order.status}"`,
+      `"${order.txHash || 'N/A'}"`
+    ]);
+
+    const csvContent = [headers.join(","), ...csvData.map(e => e.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `reseller_orders_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Data exported successfully!");
+  };
+
   return (
     <div className="container mx-auto px-6 py-10 animate-fade-in-up">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Order History</h1>
-        <button className="px-5 py-2 rounded-xl bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-gray-700 text-sm font-semibold shadow-sm hover:shadow-md transition-all">
+        <button 
+          onClick={handleExportData}
+          className="px-5 py-2 rounded-xl bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-gray-700 text-sm font-semibold shadow-sm hover:shadow-md transition-all active:scale-95"
+        >
           Export Data
         </button>
       </div>
@@ -65,7 +99,7 @@ const ResellerDashboard = () => {
                   </td>
                   <td className="p-6">
                     {order.txHash ? (
-                      <a href={`https://etherscan.io/tx/${order.txHash}`} target="_blank" rel="noreferrer" className="text-xs font-mono text-blue-500 hover:text-blue-600 hover:underline truncate max-w-[100px] block" title={order.txHash}>
+                      <a href={`https://sepolia.etherscan.io/tx/${order.txHash}`} target="_blank" rel="noreferrer" className="text-xs font-mono text-blue-500 hover:text-blue-600 hover:underline truncate max-w-[100px] block" title={order.txHash}>
                         {order.txHash.substring(0, 10)}...{order.txHash.substring(order.txHash.length - 4)}
                       </a>
                     ) : (

@@ -18,6 +18,9 @@ const ProductDetail = () => {
   const [comment, setComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  const [showBuyModal, setShowBuyModal] = useState(false);
+  const [purchaseQty, setPurchaseQty] = useState(1);
+
   const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
@@ -38,24 +41,33 @@ const ProductDetail = () => {
     }
   };
 
-  const handleBuy = async () => {
+  const handleOpenBuyModal = () => {
     if (!user || user.role !== 'reseller') {
       toast.error('Please login as a Reseller to buy.');
       return;
     }
+    setPurchaseQty(1);
+    setShowBuyModal(true);
+  };
+
+  const handleBuy = async () => {
     if (!window.ethereum) {
       toast.error('Please install MetaMask!');
       return;
     }
 
-    const qty = prompt(`Buy Quantity (Stock: ${product.stock})`, "1");
-    if (!qty) return;
-    const quantity = parseInt(qty);
+    const quantity = parseInt(purchaseQty);
+    if (isNaN(quantity) || quantity <= 0) {
+      toast.error('Invalid quantity');
+      return;
+    }
+    
     if (quantity > product.stock) {
       toast.error('Insufficient stock');
       return;
     }
 
+    setShowBuyModal(false);
     const loadingToast = toast.loading('Processing transaction...');
     setBuying(true);
 
@@ -193,7 +205,7 @@ const ProductDetail = () => {
            </div>
 
            <button 
-             onClick={handleBuy}
+             onClick={handleOpenBuyModal}
              disabled={buying || product.stock === 0}
              className="w-full btn-primary py-4 text-lg shadow-xl hover:shadow-orange-500/40"
            >
@@ -201,6 +213,74 @@ const ProductDetail = () => {
            </button>
         </div>
       </div>
+
+      {/* Purchase Modal */}
+      {showBuyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-[#1E1E1E] w-full max-w-md rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-zoom-in">
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Order Details</h3>
+                <button onClick={() => setShowBuyModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex gap-4 items-center bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl">
+                  <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-xl overflow-hidden flex-shrink-0">
+                    {product.imageUrl ? <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">No Image</div>}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 dark:text-white truncate max-w-[200px]">{product.name}</h4>
+                    <p className="text-orange-500 font-bold text-sm">{product.price} ETH</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-500 uppercase tracking-wider">Purchase Quantity</label>
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => setPurchaseQty(Math.max(1, purchaseQty - 1))}
+                      className="w-12 h-12 flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-xl"
+                    >
+                      -
+                    </button>
+                    <input 
+                      type="number" 
+                      min="1" 
+                      max={product.stock}
+                      value={purchaseQty}
+                      onChange={(e) => setPurchaseQty(Math.min(product.stock, Math.max(1, parseInt(e.target.value) || 1)))}
+                      className="flex-1 h-12 text-center bg-gray-50 dark:bg-gray-800 border-none rounded-xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                    />
+                    <button 
+                      onClick={() => setPurchaseQty(Math.min(product.stock, purchaseQty + 1))}
+                      className="w-12 h-12 flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-bold text-xl"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-400 text-right">Available Stock: {product.stock}</p>
+                </div>
+
+                <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <div className="flex justify-between items-center mb-6">
+                    <span className="text-gray-500 font-medium">Total Payment</span>
+                    <span className="text-2xl font-black text-gray-900 dark:text-white">{(product.price * purchaseQty).toFixed(4)} ETH</span>
+                  </div>
+                  <button 
+                    onClick={handleBuy}
+                    className="w-full btn-primary py-4 text-lg shadow-lg"
+                  >
+                    Confirm Purchase
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reviews Section */}
       <div className="mt-16 max-w-4xl">
