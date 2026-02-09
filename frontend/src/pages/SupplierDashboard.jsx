@@ -6,26 +6,20 @@ const SupplierDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [trash, setTrash] = useState([]);
   const [activeTab, setActiveTab] = useState('products');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editProductId, setEditProductId] = useState(null);
   const [newProduct, setNewProduct] = useState({
-    name: '', description: '', price: '', stock: '', imageUrl: '', category: ''
+    name: '', description: '', price: '', stock: '', category: '', image: null
   });
 
   const user = JSON.parse(localStorage.getItem('user'));
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchProducts();
-      fetchOrders();
-      fetchTrash();
-    }
-  }, []);
 
   const fetchProducts = async () => {
     try {
       const res = await fetch(`http://localhost:3001/api/suppliers/${user.id}/products`);
       const data = await res.json();
       setProducts(data);
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch products');
     }
   };
@@ -45,26 +39,75 @@ const SupplierDashboard = () => {
       const res = await fetch(`http://localhost:3001/api/suppliers/${user.id}/orders`);
       const data = await res.json();
       setOrders(data);
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch orders');
     }
   };
 
+  useEffect(() => {
+    if (user?.id) {
+      fetchProducts();
+      fetchOrders();
+      fetchTrash();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  const handleEditProduct = (product) => {
+    setNewProduct({
+      name: product.name,
+      description: product.description || '',
+      price: product.price,
+      stock: product.stock,
+      category: product.category || '',
+      image: null
+    });
+    setEditProductId(product.id);
+    setIsEditing(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setNewProduct({ name: '', description: '', price: '', stock: '', category: '', image: null });
+    setIsEditing(false);
+    setEditProductId(null);
+    if(document.getElementById('fileInput')) document.getElementById('fileInput').value = '';
+  };
+
   const handleCreateProduct = async (e) => {
     e.preventDefault();
-    const loadingToast = toast.loading('Publishing product...');
+    const loadingToast = toast.loading(isEditing ? 'Updating product...' : 'Publishing product...');
+    
     try {
-      const res = await fetch('http://localhost:3001/api/suppliers/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newProduct, supplierId: user.id })
+      const formData = new FormData();
+      if (!isEditing) formData.append('supplierId', user.id);
+      formData.append('name', newProduct.name);
+      formData.append('description', newProduct.description);
+      formData.append('price', newProduct.price);
+      formData.append('stock', newProduct.stock);
+      formData.append('category', newProduct.category);
+      if (newProduct.image) {
+        formData.append('image', newProduct.image);
+      }
+
+      const url = isEditing 
+        ? `http://localhost:3001/api/products/${editProductId}`
+        : 'http://localhost:3001/api/suppliers/products';
+      
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method: method,
+        body: formData
       });
+
       if (res.ok) {
-        toast.success('Product published successfully!', { id: loadingToast });
-        setNewProduct({ name: '', description: '', price: '', stock: '', imageUrl: '', category: '' });
+        toast.success(isEditing ? 'Product updated!' : 'Product published!', { id: loadingToast });
+        handleCancelEdit();
         fetchProducts();
       } else {
-        toast.error('Failed to publish product', { id: loadingToast });
+        const err = await res.json();
+        toast.error(err.message || 'Failed to save product', { id: loadingToast });
       }
     } catch (error) {
       console.error(error);
@@ -119,7 +162,7 @@ const SupplierDashboard = () => {
         const err = await res.json();
         toast.error(err.message || 'Failed to delete product');
       }
-    } catch (error) {
+    } catch {
       toast.error('Error connecting to server');
     }
   };
@@ -134,7 +177,7 @@ const SupplierDashboard = () => {
       } else {
         toast.error('Failed to restore product');
       }
-    } catch (error) {
+    } catch {
       toast.error('Error restoring product');
     }
   };
@@ -202,18 +245,53 @@ const SupplierDashboard = () => {
         <div className="lg:w-3/4">
           {activeTab === 'products' && (
             <div className="space-y-8">
-               {/* Add Product Card */}
+               {/* Add/Edit Product Card */}
                <div className="bg-white dark:bg-[#1E1E1E] rounded-3xl p-8 shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Add New Product</h3>
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{isEditing ? 'Edit Product' : 'Add New Product'}</h3>
+                    {isEditing && (
+                      <button 
+                        onClick={handleCancelEdit}
+                        className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white"
+                      >
+                        Cancel Edit
+                      </button>
+                    )}
+                  </div>
                   <form onSubmit={handleCreateProduct} className="grid grid-cols-1 md:grid-cols-2 gap-5">
                      <input type="text" placeholder="Product Name" className="input-modern" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} required />
                      <input type="text" placeholder="Category" className="input-modern" value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} />
                      <input type="number" placeholder="Price (ETH)" className="input-modern" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} required />
                      <input type="number" placeholder="Stock" className="input-modern" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} required />
                      <input type="text" placeholder="Image URL (http://...)" className="input-modern md:col-span-2" value={newProduct.imageUrl} onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} />
+                     <div className="md:col-span-2">
+                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Product Image {isEditing && '(Leave empty to keep existing)'}</label>
+                       <input 
+                         id="fileInput"
+                         type="file" 
+                         accept="image/*"
+                         className="block w-full text-sm text-gray-500
+                           file:mr-4 file:py-2.5 file:px-4
+                           file:rounded-full file:border-0
+                           file:text-sm file:font-semibold
+                           file:bg-orange-50 file:text-orange-700
+                           hover:file:bg-orange-100 dark:file:bg-orange-900/20 dark:file:text-orange-400
+                           cursor-pointer
+                         " 
+                         onChange={e => setNewProduct({...newProduct, image: e.target.files[0]})} 
+                       />
+                     </div>
+
                      <textarea placeholder="Product Description" className="input-modern md:col-span-2 h-32 resize-none" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
-                     <div className="md:col-span-2 flex justify-end mt-2">
-                        <button type="submit" className="btn-primary w-full md:w-auto">Publish Product</button>
+                     <div className="md:col-span-2 flex justify-end gap-3 mt-2">
+                        {isEditing && (
+                          <button type="button" onClick={handleCancelEdit} className="px-5 py-2.5 rounded-xl font-bold text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                            Cancel
+                          </button>
+                        )}
+                        <button type="submit" className="btn-primary w-full md:w-auto">
+                          {isEditing ? 'Update Product' : 'Publish Product'}
+                        </button>
                      </div>
                   </form>
                </div>
@@ -232,13 +310,22 @@ const SupplierDashboard = () => {
                            <p className="text-orange-500 font-bold text-sm">{p.price} ETH</p>
                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Stock: {p.stock} • {p.category}</p>
                         </div>
-                        <button 
-                          onClick={() => handleDeleteProduct(p.id)}
-                          className="p-2 bg-gray-50 dark:bg-gray-800 rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
-                          title="Move to trash"
-                        >
-                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => handleEditProduct(p)}
+                            className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-full text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all"
+                            title="Edit"
+                          >
+                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteProduct(p.id)}
+                            className="p-2 bg-red-50 dark:bg-red-900/20 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 transition-all"
+                            title="Move to trash"
+                          >
+                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

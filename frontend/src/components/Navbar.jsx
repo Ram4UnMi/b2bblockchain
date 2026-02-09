@@ -1,14 +1,42 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { useState, useEffect } from 'react';
 
 const Navbar = ({ user }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { theme, toggleTheme } = useTheme();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+
+  useEffect(() => {
+    const query = searchParams.get('search') || '';
+    if (searchTerm !== query) {
+      // eslint-disable-next-line
+      setSearchTerm(query);
+    }
+  }, [searchParams, searchTerm]);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
     navigate('/login');
     window.location.reload();
+  };
+
+  const handleSearch = (e) => {
+    const query = e.target.value;
+    setSearchTerm(query);
+    
+    if (location.pathname !== '/') {
+       navigate(`/?search=${query}`);
+    } else {
+       setSearchParams(prev => {
+          const newParams = new URLSearchParams(prev);
+          if (query) newParams.set('search', query);
+          else newParams.delete('search');
+          return newParams;
+       });
+    }
   };
 
   return (
@@ -29,6 +57,8 @@ const Navbar = ({ user }) => {
           <div className="relative group">
             <input 
               type="text" 
+              value={searchTerm}
+              onChange={handleSearch}
               placeholder="Search products, suppliers..." 
               className="w-full bg-gray-100 dark:bg-[#1E1E1E] border-none rounded-full px-6 py-3 pl-12 focus:ring-2 focus:ring-orange-500/50 transition-all shadow-inner dark:text-white"
             />

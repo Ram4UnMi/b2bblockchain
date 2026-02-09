@@ -30,7 +30,15 @@ const login = async (req, res) => {
 // Create Product
 const createProduct = async (req, res) => {
     try {
-        const { supplierId, name, description, price, stock, imageUrl, category } = req.body;
+        const { supplierId, name, description, price, stock, category } = req.body;
+        let imageUrl = req.body.imageUrl || '';
+
+        if (req.file) {
+            const protocol = req.protocol;
+            const host = req.get('host');
+            imageUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+        }
+
         const product = await Product.create({
             supplierId, name, description, price, stock, imageUrl, category
         });
