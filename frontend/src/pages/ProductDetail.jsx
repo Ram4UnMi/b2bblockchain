@@ -20,12 +20,27 @@ const ProductDetail = () => {
 
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [purchaseQty, setPurchaseQty] = useState(1);
+  const [promoCode, setPromoCode] = useState('');
+  const [discount, setDiscount] = useState(0);
 
   const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
     fetchProductDetail();
   }, [id]);
+
+  const handleApplyPromo = () => {
+    if (promoCode.toUpperCase() === 'LUNAR2026') {
+      setDiscount(0.25);
+      toast.success('Promo applied! 25% discount');
+    } else if (promoCode.toUpperCase() === 'RAMADHAN2026') {
+      setDiscount(0.15);
+      toast.success('Promo applied! 15% discount');
+    } else {
+      setDiscount(0);
+      toast.error('Invalid promo code');
+    }
+  };
 
   const fetchProductDetail = async () => {
     try {
@@ -72,7 +87,8 @@ const ProductDetail = () => {
     setBuying(true);
 
     try {
-      const totalPrice = parseFloat(product.price) * quantity;
+      const basePrice = parseFloat(product.price) * quantity;
+      const totalPrice = basePrice * (1 - discount);
       
       // 1. Backend Order
       const orderRes = await fetch('http://localhost:3001/api/orders', {
@@ -151,9 +167,7 @@ const ProductDetail = () => {
   if (loading) return <div className="p-10 text-center">Loading...</div>;
   if (!product) return null;
 
-  const averageRating = product.Ratings?.length 
-    ? (product.Ratings.reduce((a, b) => a + b.rating, 0) / product.Ratings.length).toFixed(1) 
-    : 0;
+  const averageRating = product.averageRating || 0;
 
   return (
     <div className="container mx-auto px-6 py-10 animate-fade-in-up">
@@ -264,10 +278,35 @@ const ProductDetail = () => {
                   <p className="text-xs text-gray-400 text-right">Available Stock: {product.stock}</p>
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-500 uppercase tracking-wider">Promo Code</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Enter code (e.g. LUNAR2026)"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value)}
+                      className="flex-1 px-4 py-2 bg-gray-50 dark:bg-gray-800 border-none rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-orange-500 uppercase"
+                    />
+                    <button 
+                      onClick={handleApplyPromo}
+                      className="px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-xl text-xs font-bold hover:bg-black transition-colors"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+
                 <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+                  {discount > 0 && (
+                    <div className="flex justify-between items-center mb-2 text-sm">
+                      <span className="text-emerald-500 font-medium">Discount ({discount * 100}%)</span>
+                      <span className="text-emerald-500 font-bold">-{(product.price * purchaseQty * discount).toFixed(4)} ETH</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center mb-6">
                     <span className="text-gray-500 font-medium">Total Payment</span>
-                    <span className="text-2xl font-black text-gray-900 dark:text-white">{(product.price * purchaseQty).toFixed(4)} ETH</span>
+                    <span className="text-2xl font-black text-gray-900 dark:text-white">{(product.price * purchaseQty * (1 - discount)).toFixed(4)} ETH</span>
                   </div>
                   <button 
                     onClick={handleBuy}

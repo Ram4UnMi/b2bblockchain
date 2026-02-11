@@ -74,10 +74,32 @@ const getIncomingOrders = async (req, res) => {
     }
 }
 
+// Update Profile
+const updateProfile = async (req, res) => {
+    try {
+        const { supplierId } = req.params;
+        const { name, email, companyName, walletAddress } = req.body;
+        
+        const supplier = await Supplier.findByPk(supplierId);
+        if (!supplier) return res.status(404).json({ message: 'Supplier not found' });
+
+        if (email && email !== supplier.email) {
+            const existing = await Supplier.findOne({ where: { email } });
+            if (existing) return res.status(400).json({ message: 'Email already exists' });
+        }
+
+        await supplier.update({ name, email, companyName, walletAddress });
+        res.status(200).json(supplier);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating profile', error: error.message });
+    }
+};
+
 module.exports = {
     register,
     login,
     createProduct,
     getMyProducts,
-    getIncomingOrders
+    getIncomingOrders,
+    updateProfile
 };

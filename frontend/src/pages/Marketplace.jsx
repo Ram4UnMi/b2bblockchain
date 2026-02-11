@@ -68,6 +68,43 @@ const Marketplace = () => {
 
   return (
     <div className="container mx-auto px-6 py-10">
+      {/* Event Banners Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+        {/* Lunar New Year Banner */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-red-600 to-orange-600 text-white p-8 h-64 flex flex-col justify-center group shadow-xl shadow-red-500/20">
+          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
+          <div className="relative z-10">
+            <span className="inline-block px-4 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-widest mb-4">Limited Event</span>
+            <h2 className="text-4xl font-black mb-2">Lunar New Year</h2>
+            <p className="text-red-100 max-w-xs mb-6">Enjoy up to <span className="font-bold text-white text-xl">25% OFF</span> on selected electronics. Valid until Feb 15!</p>
+            <div className="flex items-center gap-2 text-sm font-bold">
+              <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">🧧</span>
+              PROMO CODE: LUNAR2026
+            </div>
+          </div>
+          <div className="absolute bottom-4 right-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
+            <svg className="w-40 h-40" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
+          </div>
+        </div>
+
+        {/* Ramadhan Banner */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-600 to-teal-700 text-white p-8 h-64 flex flex-col justify-center group shadow-xl shadow-emerald-500/20">
+          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
+          <div className="relative z-10">
+            <span className="inline-block px-4 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-widest mb-4">Upcoming Event</span>
+            <h2 className="text-4xl font-black mb-2">Ramadhan Kareem</h2>
+            <p className="text-emerald-100 max-w-xs mb-6">Special Bulk Discounts for Resellers. <span className="font-bold text-white text-xl">Extra 15%</span> Cash Back in ETH!</p>
+            <div className="flex items-center gap-2 text-sm font-bold">
+              <span className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">🌙</span>
+              Starts: March 1, 2026
+            </div>
+          </div>
+          <div className="absolute bottom-4 right-8 opacity-20 group-hover:rotate-12 transition-transform duration-700">
+            <svg className="w-40 h-40" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+          </div>
+        </div>
+      </div>
+
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-10 animate-fade-in-up">
         <div>
@@ -126,8 +163,7 @@ const Marketplace = () => {
                      </div>
                      <div className="flex items-center text-xs text-gray-400">
                         <svg className="w-3 h-3 mr-1 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                        {/* Rating Placeholder - could be dynamic later */}
-                        5.0
+                        {product.averageRating || '0.0'}
                      </div>
                   </div>
 

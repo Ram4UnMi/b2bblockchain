@@ -4,6 +4,7 @@ import Marketplace from './pages/Marketplace';
 import ProductDetail from './pages/ProductDetail';
 import SupplierDashboard from './pages/SupplierDashboard';
 import ResellerDashboard from './pages/ResellerDashboard';
+import Settings from './pages/Settings';
 import Navbar from './components/Navbar';
 import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
@@ -26,6 +27,9 @@ function App() {
             } />
             <Route path="/reseller" element={
               user && user.role === 'reseller' ? <ResellerDashboard /> : <Navigate to="/login" />
+            } />
+            <Route path="/settings" element={
+              user ? <Settings /> : <Navigate to="/login" />
             } />
           </Routes>
           <Toaster 

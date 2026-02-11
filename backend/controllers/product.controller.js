@@ -5,12 +5,33 @@ const { Op } = require('sequelize');
 const getAllProducts = async (req, res) => {
     try {
         const products = await Product.findAll({
-            include: [{
-                model: Supplier,
-                attributes: ['name', 'companyName', 'walletAddress']
-            }]
+            include: [
+                {
+                    model: Supplier,
+                    attributes: ['name', 'companyName', 'walletAddress']
+                },
+                {
+                    model: Rating,
+                    attributes: ['rating']
+                }
+            ]
         });
-        res.status(200).json(products);
+
+        // Calculate average rating for each product
+        const productsWithRating = products.map(product => {
+            const productJson = product.toJSON();
+            const ratings = productJson.Ratings || [];
+            const avgRating = ratings.length > 0 
+                ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length 
+                : 0;
+            
+            return {
+                ...productJson,
+                averageRating: avgRating.toFixed(1)
+            };
+        });
+
+        res.status(200).json(productsWithRating);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching products', error: error.message });
     }
@@ -33,7 +54,17 @@ const getProductById = async (req, res) => {
             ]
         });
         if (!product) return res.status(404).json({ message: 'Product not found' });
-        res.status(200).json(product);
+        
+        const productJson = product.toJSON();
+        const ratings = productJson.Ratings || [];
+        const avgRating = ratings.length > 0 
+            ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length 
+            : 0;
+
+        res.status(200).json({
+            ...productJson,
+            averageRating: avgRating.toFixed(1)
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching product', error: error.message });
     }

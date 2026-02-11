@@ -8,5 +8,6 @@ router.post('/login', supplierController.login);
 router.post('/products', upload.single('image'), supplierController.createProduct);
 router.get('/:supplierId/products', supplierController.getMyProducts);
 router.get('/:supplierId/orders', supplierController.getIncomingOrders);
+router.put('/:supplierId', supplierController.updateProfile);
 
 module.exports = router;

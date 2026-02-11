@@ -42,8 +42,30 @@ const getMyOrders = async (req, res) => {
     }
 };
 
+// Update Profile
+const updateProfile = async (req, res) => {
+    try {
+        const { resellerId } = req.params;
+        const { name, email, storeName } = req.body;
+        
+        const reseller = await Reseller.findByPk(resellerId);
+        if (!reseller) return res.status(404).json({ message: 'Reseller not found' });
+
+        if (email && email !== reseller.email) {
+            const existing = await Reseller.findOne({ where: { email } });
+            if (existing) return res.status(400).json({ message: 'Email already exists' });
+        }
+
+        await reseller.update({ name, email, storeName });
+        res.status(200).json(reseller);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating profile', error: error.message });
+    }
+};
+
 module.exports = {
     register,
     login,
-    getMyOrders
+    getMyOrders,
+    updateProfile
 };
